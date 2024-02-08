@@ -1,0 +1,12 @@
+*.*
+*
+!*/
+!/docs/*
+!/sha3acc/*
+# !/sha2acc/*
+!/sha3sim/*
+!/sha2sim/*
+!Makefile
+!README.md
+!.gitignore
+!*.sh

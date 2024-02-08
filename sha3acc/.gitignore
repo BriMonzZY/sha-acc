@@ -1,0 +1,15 @@
+*.*
+*
+!*/
+!/docs/*
+!/software/*
+!/src/*
+!Makefile
+!README.md
+!.gitignore
+!build.sbt
+!*.sh
+!*.c
+!*.h
+!*.v
+!*.scala
