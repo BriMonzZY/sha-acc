@@ -1,0 +1,11 @@
+{
+  "name" : "sha2-bare-rocc",
+  "workdir" : "..",
+  "base" : "bare-base.json",
+  "host-init" : "build.sh",
+  "bin" : "tests/bare/sha2-rocc.riscv",
+  "spike-args" : "--extension=sha2",
+  "testing" : {
+    "refDir" : "test-reference/bare-rocc"
+  }
+}

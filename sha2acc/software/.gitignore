@@ -1,0 +1,10 @@
+*.*
+*
+!*/
+!/marshal-configs/**
+!/test-reference/**
+!/tests/**
+!.gitignore
+!*.sh
+!README.md
+*.riscv

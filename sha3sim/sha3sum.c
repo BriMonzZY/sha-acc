@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
   p = (void *)input;
 
   sha3Init256(&c);
-  sha3Update(&c, p, 150);
+  sha3Update(&c, p, sizeof(input));
   hash = sha3Finalize(&c);
 
   munmap(p, 150);
@@ -150,7 +150,8 @@ int main(int argc, char *argv[])
   for(i = 0; i < 256/8; i++) {
     char s[3];
     ByteToHex(hash[i], s);
-    printf("%s", s);
+    // printf("%s", s);
+    printf("%d,", hash[i]);
   }
 
   return 0;

@@ -22,6 +22,8 @@
 
 #include "sha2.h"
 
+// #define TEST
+
 static void help(const char *argv0)
 {
   printf("To call: %s [-f] <filename> or <string>\n", argv0);
@@ -29,6 +31,7 @@ static void help(const char *argv0)
 
 int main(int argc, char *argv[])
 {
+#ifndef TEST
   const char *input;
   int fd;
   struct stat st;
@@ -80,4 +83,19 @@ int main(int argc, char *argv[])
   printf("  %s\n", input);
 
   return 0;
+#else
+  int fd;
+  unsigned i;
+  uint8_t hash[SHA256_SIZE_BYTES];
+
+  static unsigned char input[150] = { '\0' };
+
+  sha256(input, sizeof(input), hash);
+
+  for(i = 0; i < SHA256_SIZE_BYTES; i++) {
+    printf("%d,", hash[i]);
+  }
+
+  return 0;
+#endif
 }
