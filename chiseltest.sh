@@ -2,11 +2,8 @@
 # brimonzzy
 # zzybrimon@gmail.com
 
-chipyard=~/chipyard
 
-
-cp -r sha3acc $chipyard/generators
-cd $chipyard
+cd ../../
 source ./env.sh
 sbt "project sha3" "test" # TODO:不知道为什么运行结束后会报段错误
 # sbt "project sha3" "testOnly sha3.ChiTests"

@@ -2,7 +2,7 @@
 # brimonzzy
 # zzybrimon@gmail.com
 
-chipyard=~/chipyard
+chipyard=../../
 
 
 usage() {
@@ -36,8 +36,6 @@ done
 ## build sha3 and rocket chip
 echo " ========== BUILD SHA ACC =========="
 if [ $BUILD_TYPE == "sha3acc" ]; then
-  rm -rf $chipyard/generators/sha3acc
-  cp -r sha3acc $chipyard/generators
   cd $chipyard
   source ./env.sh
   cd sims/verilator
@@ -49,8 +47,6 @@ if [ $BUILD_TYPE == "sha3acc" ]; then
 fi
 
 if [ $BUILD_TYPE == "sha3accprint" ]; then
-  rm -rf $chipyard/generators/sha3acc
-  cp -r sha3acc $chipyard/generators
   cd $chipyard
   source ./env.sh
   cd sims/verilator
@@ -63,12 +59,22 @@ fi
 
 if [ $BUILD_TYPE == "sha3test" ]; then
   echo " ========== BUILD SOFTWAR TESTS =========="
-  cp -r sha3acc $chipyard/generators
   cd $chipyard
   source ./env.sh
   cd generators/sha3acc/software
   marshal build marshal-configs/sha3-bare-rocc.yaml
   marshal build marshal-configs/sha3-bare-sw.yaml
+fi
+
+if [ $BUILD_TYPE == "sha2acc" ]; then
+  cd $chipyard
+  source ./env.sh
+  cd sims/verilator
+  make CONFIG=Sha2RocketConfig VERILATOR_THREADS=$(nproc) -j$(nproc)
+  ## build software tests
+  echo " ========== BUILD SOFTWAR TESTS =========="
+  cd $chipyard/generators/sha2acc/software/tests/bare
+  make
 fi
 
 echo "Build complete!"

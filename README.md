@@ -8,13 +8,28 @@
 
 
 
-sha3sim SHA3算法的C语言实现
 
-sha3acc SHA3算法硬件加速器
 
-sha2sim SHA2算法的C语言实现
+文件结构：
 
-sha2acc SHA2算法硬件加速器
+```txt
+.
+├── sha3sim // SHA3算法的C语言实现
+├── sha3acc // SHA3算法硬件加速器
+|   ├── software
+|   └── src
+├── sha2sim // SHA2算法的C语言实现
+├── sha2acc // SHA2算法硬件加速器
+|   ├── software
+|   └── src
+└── doc // 文档
+```
+
+
+
+
+
+
 
 
 

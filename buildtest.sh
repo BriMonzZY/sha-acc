@@ -2,17 +2,11 @@
 # brimonzzy
 # zzybrimon@gmail.com
 
-chipyard=~/chipyard # TODO
+chipyard=../../ # TODO
+pwd=$(pwd)
 
-cp -r sha3acc $chipyard/generators
-cp -r sha2acc $chipyard/generators
-
-cd $chipyard
-source ./env.sh
-cd $chipyard/generators/sha3acc/software
+source $chipyard/./env.sh
+cd $pwd/sha3acc/software
 ./build.sh
-cd $chipyard/generators/sha2acc/software
+cd ../../sha2acc/software
 ./build.sh
-
-# marshal test --spike marshal-configs/sha3-bare-rocc.yaml
-# marshal test --spike marshal-configs/sha3-bare-sw.yaml

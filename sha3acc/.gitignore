@@ -13,3 +13,4 @@
 !*.h
 !*.v
 !*.scala
+/target/*
