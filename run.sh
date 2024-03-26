@@ -2,11 +2,11 @@
 # brimonzzy
 # zzybrimon@gmail.com
 
-config=RocketConfig
-# config=Sha3RocketConfig
+# config=RocketConfig
+config=Sha3RocketConfig
 # config=Sha3RocketPrintfConfig
-# testname=sha3-rocc
-testname=sha3-sw
+testname=sha3-rocc
+# testname=sha3-sw
 
 cd ../../
 source ./env.sh
