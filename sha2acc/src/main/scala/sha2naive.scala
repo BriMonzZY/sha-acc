@@ -405,7 +405,7 @@ class Sha256Calc extends Module {
   }
 }
 
-class AvalonSlave(aw: Int, dw: Int) extends Bundle {
+class NaiveSlave(aw: Int, dw: Int) extends Bundle {
   val addr = Input(UInt(aw.W))
   val rd = Input(Bool())
   val rdata = Output(UInt(dw.W))
@@ -413,9 +413,9 @@ class AvalonSlave(aw: Int, dw: Int) extends Bundle {
   val wdata = Input(UInt(dw.W))
 }
 
-class Sha256Avalon extends Module {
+class Sha256Naive extends Module {
   val io = IO(new Bundle {
-    val slave = new AvalonSlave(6, 32)
+    val slave = new NaiveSlave(6, 32)
   })
   val rdata = RegInit(0.U(32.W))
   val wdata = RegInit(0.U(32.W))

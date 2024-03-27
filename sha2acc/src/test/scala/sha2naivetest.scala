@@ -241,7 +241,91 @@ class sha256UnitTester(c: Sha256Calc) extends AnyFlatSpec with ChiselScalatestTe
   c.io.hout.h.expect(BigInt("19db06c1", 16))
 }
 
+class sha256NaiveUnitTester(c: Sha256Naive) extends AnyFlatSpec with ChiselScalatestTester {
+  def writeNaive(address: BigInt, data: BigInt): UInt = {
+    c.io.slave.addr.poke(address >> 2)
+    c.io.slave.wdata.poke(data)
+    c.io.slave.wr.poke(true.B)
+    c.clock.step(1)
+    c.io.slave.wr.poke(false.B)
+    return 0.U
+  }
 
+  def readNaive(address: BigInt, expected: BigInt): UInt = {
+    c.io.slave.addr.poke(address >> 2)
+    c.io.slave.rd.poke(true.B)
+    c.clock.step(1)
+    c.io.slave.rd.poke(false.B)
+    c.io.slave.rdata.expect(expected)
+    return 0.U
+  }
+
+  writeNaive(BigInt("00", 16), BigInt("01", 16))
+  writeNaive(BigInt("00", 16), BigInt("00", 16))
+
+  // 输入消息
+  writeNaive(BigInt("04", 16), BigInt("61626364", 16))
+  writeNaive(BigInt("08", 16), BigInt("62636465", 16))
+  writeNaive(BigInt("0C", 16), BigInt("63646566", 16))
+  writeNaive(BigInt("10", 16), BigInt("64656667", 16))
+  writeNaive(BigInt("14", 16), BigInt("65666768", 16))
+  writeNaive(BigInt("18", 16), BigInt("66676869", 16))
+  writeNaive(BigInt("1C", 16), BigInt("6768696a", 16))
+  writeNaive(BigInt("20", 16), BigInt("68696a6b", 16))
+  writeNaive(BigInt("24", 16), BigInt("696a6b6c", 16))
+  writeNaive(BigInt("28", 16), BigInt("6a6b6c6d", 16))
+  writeNaive(BigInt("2C", 16), BigInt("6b6c6d6e", 16))
+  writeNaive(BigInt("30", 16), BigInt("6c6d6e6f", 16))
+  writeNaive(BigInt("34", 16), BigInt("6d6e6f70", 16))
+  writeNaive(BigInt("38", 16), BigInt("6e6f7071", 16))
+  writeNaive(BigInt("3C", 16), BigInt("80000000", 16))
+  writeNaive(BigInt("40", 16), BigInt("00000000", 16))
+
+  writeNaive(BigInt("00", 16), BigInt("02", 16))
+  writeNaive(BigInt("00", 16), BigInt("00", 16))
+  c.clock.step(70)
+  readNaive(BigInt("00", 16), 4)
+  readNaive(BigInt("44", 16), BigInt("85e655d6", 16))
+  readNaive(BigInt("48", 16), BigInt("417a1795", 16))
+  readNaive(BigInt("4C", 16), BigInt("3363376a", 16))
+  readNaive(BigInt("50", 16), BigInt("624cde5c", 16))
+  readNaive(BigInt("54", 16), BigInt("76e09589", 16))
+  readNaive(BigInt("58", 16), BigInt("cac5f811", 16))
+  readNaive(BigInt("5C", 16), BigInt("cc4b32c1", 16))
+  readNaive(BigInt("60", 16), BigInt("f20e533a", 16))
+
+  writeNaive(BigInt("04", 16), BigInt("00000000", 16))
+  writeNaive(BigInt("08", 16), BigInt("00000000", 16))
+  writeNaive(BigInt("0C", 16), BigInt("00000000", 16))
+  writeNaive(BigInt("10", 16), BigInt("00000000", 16))
+  writeNaive(BigInt("14", 16), BigInt("00000000", 16))
+  writeNaive(BigInt("18", 16), BigInt("00000000", 16))
+  writeNaive(BigInt("1C", 16), BigInt("00000000", 16))
+  writeNaive(BigInt("20", 16), BigInt("00000000", 16))
+  writeNaive(BigInt("24", 16), BigInt("00000000", 16))
+  writeNaive(BigInt("28", 16), BigInt("00000000", 16))
+  writeNaive(BigInt("2C", 16), BigInt("00000000", 16))
+  writeNaive(BigInt("30", 16), BigInt("00000000", 16))
+  writeNaive(BigInt("34", 16), BigInt("00000000", 16))
+  writeNaive(BigInt("38", 16), BigInt("00000000", 16))
+  writeNaive(BigInt("3C", 16), BigInt("00000000", 16))
+  writeNaive(BigInt("40", 16), BigInt("000001c0", 16))
+
+  writeNaive(BigInt("00", 16), BigInt("02", 16))
+  writeNaive(BigInt("00", 16), BigInt("00", 16))
+  c.clock.step(70)
+  readNaive(BigInt("00", 16), 4)
+  readNaive(BigInt("44", 16), BigInt("248d6a61", 16))
+  readNaive(BigInt("48", 16), BigInt("d20638b8", 16))
+  readNaive(BigInt("4C", 16), BigInt("e5c02693", 16))
+  readNaive(BigInt("50", 16), BigInt("0c3e6039", 16))
+  readNaive(BigInt("54", 16), BigInt("a33ce459", 16))
+  readNaive(BigInt("58", 16), BigInt("64ff2167", 16))
+  readNaive(BigInt("5C", 16), BigInt("f6ecedd4", 16))
+  readNaive(BigInt("60", 16), BigInt("19db06c1", 16))
+
+  c.clock.step(4)
+}
 
 class SHA2NaiveTest extends AnyFlatSpec with ChiselScalatestTester {
 
@@ -284,6 +368,13 @@ class SHA2NaiveTest extends AnyFlatSpec with ChiselScalatestTester {
     .withAnnotations(Seq(VerilatorBackendAnnotation)) { c =>
     // .withAnnotations(Seq(VcsBackendAnnotation)) { c =>
       new sha256UnitTester(c)
+    }
+  }
+
+  it should "SHA256 Naive calculator (with verilator backend)" in {
+    test(new Sha256Naive)
+    .withAnnotations(Seq(VerilatorBackendAnnotation)) { c =>
+      new sha256NaiveUnitTester(c)
     }
   }
 }
