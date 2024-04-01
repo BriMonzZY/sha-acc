@@ -3,7 +3,7 @@
 # zzybrimon@gmail.com
 
 chipyard=../../
-
+pwd=$(pwd)
 
 usage() {
   echo "Usage: please see README"
@@ -20,7 +20,7 @@ do
   case $1 in
     -h | --help)
       usage 3 ;;
-    sha3acc | sha3accprint | sha2acc | sha2accprint | sha3test | sha2test)
+    sha3acc | sha3accprint | sha2acc | sha2accprint | test | clean)
       BUILD_TYPE=$1 ;;
 
     * )
@@ -40,10 +40,6 @@ if [ $BUILD_TYPE == "sha3acc" ]; then
   source ./env.sh
   cd sims/verilator
   make CONFIG=Sha3RocketConfig VERILATOR_THREADS=$(nproc) -j$(nproc)
-  ## build software tests
-  echo " ========== BUILD SOFTWAR TESTS =========="
-  cd $chipyard/generators/sha3acc/software/tests/bare
-  make
 fi
 
 if [ $BUILD_TYPE == "sha3accprint" ]; then
@@ -51,19 +47,15 @@ if [ $BUILD_TYPE == "sha3accprint" ]; then
   source ./env.sh
   cd sims/verilator
   make CONFIG=Sha3RocketPrintfConfig VERILATOR_THREADS=$(nproc) -j$(nproc)
-  ## build software tests
-  echo " ========== BUILD SOFTWAR TESTS =========="
-  cd $chipyard/generators/sha3acc/software/tests/bare
-  make
 fi
 
-if [ $BUILD_TYPE == "sha3test" ]; then
+if [ $BUILD_TYPE == "test" ]; then
   echo " ========== BUILD SOFTWAR TESTS =========="
-  cd $chipyard
-  source ./env.sh
-  cd generators/sha3acc/software
-  marshal build marshal-configs/sha3-bare-rocc.yaml
-  marshal build marshal-configs/sha3-bare-sw.yaml
+  source $chipyard/./env.sh
+  cd $pwd/sha3acc/software
+  ./build.sh
+  cd ../../sha2acc/software
+  ./build.sh
 fi
 
 if [ $BUILD_TYPE == "sha2acc" ]; then
@@ -71,10 +63,12 @@ if [ $BUILD_TYPE == "sha2acc" ]; then
   source ./env.sh
   cd sims/verilator
   make CONFIG=Sha2RocketConfig VERILATOR_THREADS=$(nproc) -j$(nproc)
-  ## build software tests
-  echo " ========== BUILD SOFTWAR TESTS =========="
-  cd $chipyard/generators/sha2acc/software/tests/bare
-  make
+fi
+
+if [ $BUILD_TYPE == "clean" ]; then
+echo " ========== CLEAN VERILATOR BUILD FILES =========="
+  cd $chipyard/sims/verilator
+  make clean
 fi
 
 echo "Build complete!"
