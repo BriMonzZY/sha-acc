@@ -200,6 +200,7 @@ class CtrlModule(val w: Int, val s: Int)(implicit val p: Parameters) extends Mod
 
 
   switch(mem_s) {
+    // 初始化计数，跳转m_read状态
     is(m_idle){
       // we can start filling the buffer if we aren't writing and if we got a new message
       // or the hashing started
@@ -217,6 +218,7 @@ class CtrlModule(val w: Int, val s: Int)(implicit val p: Parameters) extends Mod
         mem_s := m_idle
       }
     }  // end of m_idle
+    // 给dmem发出valid信号和地址、标签，并跳转到m_wait状态
     is(m_read) {
       // dmem signals
       // only read if we aren't writing
@@ -292,6 +294,7 @@ class CtrlModule(val w: Int, val s: Int)(implicit val p: Parameters) extends Mod
       //   }
       // }
     } // end of m_read
+    // 接收dmem返回的数据（写入buffer），如果需要继续接收就回到m_read状态，否则跳转到m_wait状态
     is(m_wait) {
       // the code to process read responses
       when(io.dmem_resp_val) {
@@ -309,9 +312,11 @@ class CtrlModule(val w: Int, val s: Int)(implicit val p: Parameters) extends Mod
         // the buffer is not full
         when(mindex < (round_size_words-1).U) {
           // TODO: in pad check buffer_count ( or move on to next thread?)
+          // 
           when(msg_len > read) {
             // not sure if this case will be used but this means we haven't
             // sent all the requests yet (maybe back pressure causes this)
+            // 不确定是否会使用这种情况，但这意味着我们还没有发送所有请求（可能是反压导致的）
             when((msg_len+8.U) < read) {
               buffer_valid := false.B
               mem_s := m_pad
@@ -325,6 +330,7 @@ class CtrlModule(val w: Int, val s: Int)(implicit val p: Parameters) extends Mod
             pindex := words_filled
           }
         }.otherwise{
+          // 发送最后一个请求
           when(mindex < (round_size_words).U &&
               !(io.dmem_req_rdy && io.dmem_req_val)){
             // we are still waiting to send the last request
@@ -333,7 +339,7 @@ class CtrlModule(val w: Int, val s: Int)(implicit val p: Parameters) extends Mod
             // we have reached the end of this chunk
             // mindex := mindex + UInt(1)
             // read := read + UInt(8)//read 8 bytes
-            // we sent all the requests
+            // 已经发送了所有的请求 we sent all the requests
             msg_addr := msg_addr + (round_size_words << 3).U
             when((msg_len < (read+8.U))){
               //but the buffer still isn't full
@@ -341,7 +347,7 @@ class CtrlModule(val w: Int, val s: Int)(implicit val p: Parameters) extends Mod
               mem_s := m_pad
               pindex := words_filled
             }.otherwise {
-              //we have more to read eventually
+              // 我们最终还有更多的东西要读 we have more to read eventually
               buffer_valid := true.B
               mem_s := m_idle
             }
@@ -355,7 +361,7 @@ class CtrlModule(val w: Int, val s: Int)(implicit val p: Parameters) extends Mod
       //TODO: update next_buff_val to use pindex
       buffer_valid := next_buff_val
 
-      //only update the buffer if we have already written the mem resp to the word
+      // 只有当我们已经将mem-resp写入时，才更新缓冲区 only update the buffer if we have already written the mem resp to the word
       when(! (buffer_count < mindex && (pindex >= buffer_count)) ){
         //set everything to 0000_000 after end of message first
         when(pindex > words_filled && pindex < (round_size_words-1).U){

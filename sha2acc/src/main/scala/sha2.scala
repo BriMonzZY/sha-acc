@@ -11,7 +11,7 @@ import freechips.rocketchip.rocket.{TLBConfig, HellaCacheReq}
 /*
  * Enable specific printf's.
  */
-case object Sha2PrintfEnable extends Field[Boolean](false)
+case object Sha2PrintfEnable extends Field[Boolean]
 
 
 // For Verilog IO
@@ -31,12 +31,45 @@ class Sha2AccelModuleImp(outer: Sha2Accel)(implicit p: Parameters) extends LazyR
   // val cmd = Queue(io.cmd) // depth = 1
   val cmd = io.cmd
   val funct = cmd.bits.inst.funct
-  when(cmd.fire()) {
-    printf("[Sha2Accel] Received SHA2 Accelerator Command\n")
-    printf("[Sha2Accel] rs1: %x rs2: %x funct:%d\n", cmd.bits.rs1, cmd.bits.rs2, cmd.bits.inst.funct)
-  }
 
-  cmd.ready := true.B
+  val ctrl = Module(new Sha2CtrlModule(64)(p))
+
+  // rocc interface to controller
+  ctrl.io.rocc_req_val <> io.cmd.valid
+  ctrl.io.rocc_funct <> io.cmd.bits.inst.funct
+  ctrl.io.rocc_rs1 <> io.cmd.bits.rs1
+  ctrl.io.rocc_rs2 <> io.cmd.bits.rs2
+  ctrl.io.rocc_rd <> io.cmd.bits.inst.rd
+  io.cmd.ready := ctrl.io.rocc_req_rdy
+  io.busy := ctrl.io.busy
+
+  val status = RegEnable(io.cmd.bits.status, io.cmd.fire)
+  val dmem_data = Wire(Bits())
+
+  // memory controll
+  def sha2_dmem_ctrl(req: DecoupledIO[HellaCacheReq]) {
+    req.valid := ctrl.io.dmem_req_val
+    ctrl.io.dmem_req_rdy := req.ready
+    req.bits.tag := ctrl.io.dmem_req_tag
+    req.bits.addr := ctrl.io.dmem_req_addr
+    req.bits.cmd := ctrl.io.dmem_req_cmd
+    req.bits.size := ctrl.io.dmem_req_size
+    req.bits.data := dmem_data
+    req.bits.signed := false.B
+    req.bits.dprv := status.dprv // effective prv for data accesses
+    req.bits.dv := status.dv // effective v for data accesses
+    req.bits.phys := false.B
+  }
+  sha2_dmem_ctrl(io.mem.req)
+
+  dmem_data := 0.U
+
+  // memory response
+  ctrl.io.dmem_resp_val <> io.mem.resp.valid
+  ctrl.io.dmem_resp_tag <> io.mem.resp.bits.tag
+  ctrl.io.dmem_resp_data <> io.mem.resp.bits.data
+
+
 }
 
 class WithSha2Printf extends Config((site, here, up) => {
