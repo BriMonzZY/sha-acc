@@ -46,6 +46,10 @@ class Sha2AccelModuleImp(outer: Sha2Accel)(implicit p: Parameters) extends LazyR
   val status = RegEnable(io.cmd.bits.status, io.cmd.fire)
   val dmem_data = Wire(Bits())
 
+  when(io.cmd.fire) {
+    printf("[sha2acc] rs1: %x rs2: %x\n", io.cmd.bits.rs1, io.cmd.bits.rs2)
+  }
+
   // memory controll
   def sha2_dmem_ctrl(req: DecoupledIO[HellaCacheReq]) {
     req.valid := ctrl.io.dmem_req_val

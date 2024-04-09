@@ -5,7 +5,8 @@
 # config=RocketConfig
 # config=Sha3RocketConfig
 # config=Sha3RocketPrintfConfig
-config=Sha2RocketConfig
+# config=Sha2RocketConfig
+config=Sha2SmallRocketConfig
 # config=Sha2RocketPrintfConfig
 
 # testdir=../../generators/sha-acc/sha3acc/software/tests/bare
@@ -24,11 +25,12 @@ cd sims/verilator
 
 # 不输出Log
 # ./simulator-chipyard.harness-$config $testdir/$testname.riscv
-# ./simulator-chipyard.harness-$config $testdir/$testname.riscv
 
 # 输出Log
-# ./simulator-chipyard.harness-$config $testdir/$testname.riscv +verbose
 # ./simulator-chipyard.harness-$config $testdir/$testname.riscv +verbose
 
 # Fast Memory Loading
 make run-binary CONFIG=$config BINARY=$testdir/$testname.riscv LOADMEM=1
+
+# 生成波形文件
+# make CONFIG=RocketConfig run-binary-debug BINARY=$testdir/$testname.riscv LOADMEM=1

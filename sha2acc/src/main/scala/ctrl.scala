@@ -39,7 +39,7 @@ class Sha2CtrlModule(val w: Int)(implicit val p: Parameters) extends Module with
   })
 
   // rocc state
-  val r_idle :: r_eat_addr :: r_eat_len :: Nil = Enum(3)
+  val r_idle :: r_eat_addr :: r_eat_len :: r_finish :: Nil = Enum(4)
   val rocc_s = RegInit(r_idle)
 
   val msg_addr = RegInit(0.U(64.W)) // SHA2输入消息地址
@@ -94,6 +94,9 @@ class Sha2CtrlModule(val w: Int)(implicit val p: Parameters) extends Module with
       // and there is more to read
       // and the buffer has been abosrbed
       val canRead = true.B // FIXME
+
+      printf("[sha2acc] in m_idle state\n")
+
       when(canRead) {
         // start reading data from cache
         buffer_cnt := 0.U
@@ -114,6 +117,9 @@ class Sha2CtrlModule(val w: Int)(implicit val p: Parameters) extends Module with
       io.dmem_req_tag := mindex
       io.dmem_req_cmd := M_XRD // TODO: ?
       io.dmem_req_size := log2Ceil(8).U
+
+      printf("[sha2acc] in m_read state, mindex: %d, msg_addr: %x, read: %d\n", mindex, msg_addr, read)
+
       // read data if ready and valid
       when(io.dmem_req_rdy && io.dmem_req_val) {
         mindex := mindex + 1.U // read 1 word at a time
@@ -135,6 +141,8 @@ class Sha2CtrlModule(val w: Int)(implicit val p: Parameters) extends Module with
         // this is a read response
         buffer(mindex - 1.U) := io.dmem_resp_data
         buffer_cnt := buffer_cnt + 1.U
+
+        printf("[sha2acc] in m_wait state, response data: %x, buffer cnt: %d\n", io.dmem_resp_data, buffer_cnt)
 
         // next state
         // the buffer is not full
@@ -170,6 +178,9 @@ class Sha2CtrlModule(val w: Int)(implicit val p: Parameters) extends Module with
       }
     } // end of m_wait
     is(m_absorb) {
+
+      printf("[sha2acc] in m_absorb state, aindex: %d\n", aindex)
+
       buffer_valid := true.B
       // move to idle when we know this thread was absorbed
       when(aindex >= (round_size_words - 1).U) {
@@ -188,12 +199,13 @@ class Sha2CtrlModule(val w: Int)(implicit val p: Parameters) extends Module with
           io.rocc_req_rdy := true.B
           msg_addr := io.rocc_rs1
           hash_addr := io.rocc_rs2
-          println("Msg Addr: "+msg_addr+", Hash Addr: "+hash_addr)
           io.busy := true.B
         }.elsewhen(io.rocc_funct === 1.U) {
           io.busy := true.B
           io.rocc_req_rdy := true.B
           msg_len := io.rocc_rs1
+          printf("[sha2acc] msg addr: %x, hash addr: %x\n", msg_addr, hash_addr)
+          println("[sha2acc] msg len: %x", msg_len)
         }
       }
     }
