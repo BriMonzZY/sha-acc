@@ -22,7 +22,7 @@
 
 #include "sha2.h"
 
-// #define TEST
+#define TEST
 
 static void help(const char *argv0)
 {
@@ -89,12 +89,14 @@ int main(int argc, char *argv[])
   uint8_t hash[SHA256_SIZE_BYTES];
 
   static unsigned char input[150] = { '\0' };
+  // static unsigned char input[150] = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '\0'};
 
   sha256(input, sizeof(input), hash);
 
   for(i = 0; i < SHA256_SIZE_BYTES; i++) {
-    printf("%d,", hash[i]);
+    printf("%x,", hash[i]);
   }
+  printf("\n");
 
   return 0;
 #endif

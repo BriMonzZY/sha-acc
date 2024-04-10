@@ -33,6 +33,7 @@ class Sha2AccelModuleImp(outer: Sha2Accel)(implicit p: Parameters) extends LazyR
   val funct = cmd.bits.inst.funct
 
   val ctrl = Module(new Sha2CtrlModule(64)(p))
+  val dpath = Module(new Sha2DpathModule(64)(p))
 
   // rocc interface to controller
   ctrl.io.rocc_req_val <> io.cmd.valid
@@ -73,7 +74,10 @@ class Sha2AccelModuleImp(outer: Sha2Accel)(implicit p: Parameters) extends LazyR
   ctrl.io.dmem_resp_tag <> io.mem.resp.bits.tag
   ctrl.io.dmem_resp_data <> io.mem.resp.bits.data
 
-
+  dpath.io.start := ctrl.io.calc_valid
+  ctrl.io.dpathMessageIn <> dpath.io.message_in
+  ctrl.io.hash_finish := dpath.io.outvalid
+  dpath.io.init := ctrl.io.dpath_init
 }
 
 class WithSha2Printf extends Config((site, here, up) => {

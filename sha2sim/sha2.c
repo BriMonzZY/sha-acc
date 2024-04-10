@@ -176,9 +176,11 @@ void sha256Hash(sha256_context *ctx, const void *data, size_t len)
   if ((ctx != NULL) && (bytes != NULL) && (ctx->len < sizeof(ctx->buf))) {
     for (size_t i = 0; i < len; i++) {
       ctx->buf[ctx->len++] = bytes[i];
+      // 当512bit数据填充完毕时，进行sha256运算
       if (ctx->len == sizeof(ctx->buf)) {
         _hash(ctx);
         _addbits(ctx, sizeof(ctx->buf) * 8);
+        for(int k = 0; k < 8; k++) { printf("%x ", ctx->hash[k]); }; printf("\n");
         ctx->len = 0;
       }
     }
@@ -192,7 +194,9 @@ void sha256Done(sha256_context *ctx, uint8_t *hash)
   register uint32_t i, j;
 
   if (ctx != NULL) {
+    // 填充操作
     j = ctx->len % sizeof(ctx->buf);
+    printf("j = %d\n", j);
     ctx->buf[j] = 0x80;
     for (i = j + 1; i < sizeof(ctx->buf); i++) {
       ctx->buf[i] = 0x00;

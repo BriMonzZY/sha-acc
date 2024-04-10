@@ -39,14 +39,14 @@ class DpathModule(val w: Int, val s: Int)(implicit p: Parameters) extends Module
   iota.round := 0.U
 
   // connect submodules to each other
-  if(s==1) {
+  if(s==1) { // 无流水线
     theta.state_i := state
     rhopi.state_i <> theta.state_o
     chi.state_i <> rhopi.state_o
     iota.state_i <> chi.state_o
     state := iota.state_o
   }
-  if(s==2) {
+  if(s==2) { // 2级流水线
     // stage 1
     theta.state_i := state
     rhopi.state_i <> theta.state_o
@@ -54,7 +54,7 @@ class DpathModule(val w: Int, val s: Int)(implicit p: Parameters) extends Module
     chi.state_i := state
     iota.state_i <> chi.state_o
   }
-  if(s==4) {
+  if(s==4) { // 4级流水线
     // stage 1
     theta.state_i := state
     // stage 2
@@ -104,6 +104,7 @@ class DpathModule(val w: Int, val s: Int)(implicit p: Parameters) extends Module
       printf("SHA3 finished an iteration with index %d and message %x\n", io.aindex, io.message_in)
     }
     when(io.aindex < round_size_words.U) {
+      // 吸收 阶段的计算 Si ^ Pi
       state((io.aindex%5.U)*5.U+(io.aindex/5.U)) :=
         state((io.aindex%5.U)*5.U+(io.aindex/5.U)) ^ io.message_in
     }

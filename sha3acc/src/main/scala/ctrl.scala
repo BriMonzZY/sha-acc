@@ -41,7 +41,7 @@ class CtrlModule(val w: Int, val s: Int)(implicit val p: Parameters) extends Mod
     val sfence            = Output(Bool())
 
     // Sha3 Specific signals
-    val round       = Output(UInt(5.W))
+    val round       = Output(UInt(5.W)) // 第几轮计算
     val stage       = Output(UInt(log2Up(s).W))
     val absorb      = Output(Bool())
     val aindex      = Output(UInt(log2Up(round_size_words).W))
@@ -155,15 +155,14 @@ class CtrlModule(val w: Int, val s: Int)(implicit val p: Parameters) extends Mod
   val state = RegInit(s_idle)
 
   val rindex = RegInit((rounds+1).U(5.W))  // round index, a counter for absorb (Max=round_size_words-1)
-  // val sindex = RegInit(0.U((log2Ceil(s)+1).W)) // stage index, a counter for hash
-  val sindex = RegInit(0.U(log2Up(s).W))
+  val sindex = RegInit(0.U(log2Up(s).W)) // stage index 连接到dpath的stage信号
     
   // default
   io.rocc_req_rdy := false.B
   io.init := false.B
   io.busy := busy
   io.round := rindex
-  io.stage := sindex
+  io.stage := sindex // dpath的stage信号
   io.write := true.B
   io.dmem_req_val := false.B
   io.dmem_req_tag := rindex
@@ -326,7 +325,7 @@ class CtrlModule(val w: Int, val s: Int)(implicit val p: Parameters) extends Mod
           } .otherwise {
             // its ok we didn't send them all because the message wasn't big enough
             buffer_valid := false.B
-            mem_s := m_pad
+            mem_s := m_pad // 进填充状态，补全数据
             pindex := words_filled
           }
         }.otherwise{
@@ -344,7 +343,7 @@ class CtrlModule(val w: Int, val s: Int)(implicit val p: Parameters) extends Mod
             when((msg_len < (read+8.U))){
               //but the buffer still isn't full
               buffer_valid := false.B
-              mem_s := m_pad
+              mem_s := m_pad // 进填充状态，补全数据
               pindex := words_filled
             }.otherwise {
               // 我们最终还有更多的东西要读 we have more to read eventually
@@ -367,6 +366,7 @@ class CtrlModule(val w: Int, val s: Int)(implicit val p: Parameters) extends Mod
         when(pindex > words_filled && pindex < (round_size_words-1).U){
           //there is a special case where we need to pad on a word boundary
           //when we have to put in first_pad here rather than just all zeros
+          // 有一种特殊情况，当我们必须在这里输入first_pad而不是全零时，我们需要填充字的边界
           when(byte_offset === 0.U && (pindex === words_filled+1.U)
               && mindex =/= 0.U){
             if(buffer_sram){
@@ -388,7 +388,8 @@ class CtrlModule(val w: Int, val s: Int)(implicit val p: Parameters) extends Mod
         }.elsewhen(pindex === (round_size_words -1).U){
           //this is normally when we write the last_pad but we might end up writing both_pad
           //we write both pad if we filled all of the words
-            //and all but one of the bytes
+          //and all but one of the bytes
+          // 这通常是在我们写last_pad时发生的，但我们可能最终会写both_pad。如果我们填充了所有的字和除一个字节外的所有字节，我们会同时写两个pad
           when(words_filled === (round_size_words - 1).U){
             when(byte_offset === (bytes_per_word -1).U){
               //together with the first pad
@@ -604,7 +605,7 @@ class CtrlModule(val w: Int, val s: Int)(implicit val p: Parameters) extends Mod
         state := s_idle
       }
     }
-    is(s_absorb) {
+    is(s_absorb) { // 读取完一轮数据（17*64=1088bit）开始计算 吸收
       io.write := !areg
       areg := true.B
       aindex := aindex + 1.U
@@ -628,8 +629,8 @@ class CtrlModule(val w: Int, val s: Int)(implicit val p: Parameters) extends Mod
       state := s_hash
     }
     is(s_hash) {
-      when(rindex < rounds.U) {
-        when(sindex < (s-1).U) {
+      when(rindex < rounds.U) { // 进行了24轮
+        when(sindex < (s-1).U) { // sindex控制dpath的流水线阶段
           sindex := sindex + 1.U
           io.round := rindex
           io.stage := sindex
@@ -652,7 +653,7 @@ class CtrlModule(val w: Int, val s: Int)(implicit val p: Parameters) extends Mod
         }
       }
     }
-    is(s_write) {
+    is(s_write) { // 写回hash结果
       // we are writing
       // request
       io.dmem_req_val := windex < hash_size_words.U
@@ -675,8 +676,9 @@ class CtrlModule(val w: Int, val s: Int)(implicit val p: Parameters) extends Mod
         }
       }
       when(writes_done.reduce(_&&_)) {
-        //all the writes have been responded to
-        //this is essentially reset time
+        // 所有写回都完成
+        // all the writes have been responded to
+        // this is essentially reset time
         busy := false.B
         writes_done := VecInit(Seq.fill(hash_size_words){false.B})
         windex := hash_size_words.U

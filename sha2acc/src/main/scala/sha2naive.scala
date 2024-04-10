@@ -90,22 +90,22 @@ class Hio extends Bundle {
 
 // 将消息分成了16个32位的字，每个字作为一个输入端口
 class MesIO extends Bundle {
-  val M0 =Input(UInt(32.W))
-  val M1 =Input(UInt(32.W))
-  val M2 =Input(UInt(32.W))
-  val M3 =Input(UInt(32.W))
-  val M4 =Input(UInt(32.W))
-  val M5 =Input(UInt(32.W))
-  val M6 =Input(UInt(32.W))
-  val M7 =Input(UInt(32.W))
-  val M8 =Input(UInt(32.W))
-  val M9 =Input(UInt(32.W))
-  val M10 =Input(UInt(32.W))
-  val M11 =Input(UInt(32.W))
-  val M12 =Input(UInt(32.W))
-  val M13 =Input(UInt(32.W))
-  val M14 =Input(UInt(32.W))
-  val M15 =Input(UInt(32.W))
+  val M0 = Input(UInt(32.W))
+  val M1 = Input(UInt(32.W))
+  val M2 = Input(UInt(32.W))
+  val M3 = Input(UInt(32.W))
+  val M4 = Input(UInt(32.W))
+  val M5 = Input(UInt(32.W))
+  val M6 = Input(UInt(32.W))
+  val M7 = Input(UInt(32.W))
+  val M8 = Input(UInt(32.W))
+  val M9 = Input(UInt(32.W))
+  val M10 = Input(UInt(32.W))
+  val M11 = Input(UInt(32.W))
+  val M12 = Input(UInt(32.W))
+  val M13 = Input(UInt(32.W))
+  val M14 = Input(UInt(32.W))
+  val M15 = Input(UInt(32.W))
 
 
   def apply(idx: Int): UInt = {
@@ -131,6 +131,7 @@ class MesIO extends Bundle {
   }
 }
 
+// 输入 Wt Kt H 计算新一轮的 H(a b c d e f g h)
 class calculateStep extends Module with ChMath {
   val io = IO(new Bundle {
     val Kt = Input(UInt(32.W))
@@ -196,7 +197,7 @@ class HregisterIn extends Module {
     val hout = Flipped(new Hio) // 输出 a b c ...
     val inc = Input(Bool())
     val ld = Input(Bool())
-    val init = Input(Bool())
+    val init = Input(Bool())  // 初始化H
     val start = Input(Bool())
   })
 
@@ -319,9 +320,9 @@ class Kmemory extends Module {
 // 计算 Wt
 class Wcalc extends Module with ChMath {
   val io = IO(new Bundle {
-    val W = new MesIO
-    val ld = Input(Bool())
-    val inc = Input(Bool())
+    val W = new MesIO // 输入的Wt
+    val ld = Input(Bool()) // 将消息加载到W0-W15中
+    val inc = Input(Bool()) // 计算使能
     val out = Output(UInt(32.W)) // 输出当前的 W 值
   })
   val Wreg = RegInit(VecInit(Seq(
@@ -347,9 +348,10 @@ class Sha256Calc extends Module {
   val io = IO(new Bundle {
     val M = new MesIO // 消息输入
     val hout = Flipped(new Hio) // 结果输出 a b c d ... h
-    val start = Input(Bool())
+    val start = Input(Bool()) // 开始计算
     val ready = Output(Bool())
     val init = Input(Bool())
+    val outvalid = Output(Bool()) // 输出有效
   })
   val H0 = Module(new HregisterIn)
   val Kt = Module(new Kmemory)
@@ -359,9 +361,12 @@ class Sha256Calc extends Module {
   val count = RegInit(0.U(7.W))
   val state = RegInit(s_idle)
   val ready = RegInit(false.B)
+  val outvalid = RegInit(false.B)
   val inc = RegInit(false.B)  // 状态为 s_work 时使能
   val h0ld = RegInit(false.B)  // 状态从 s_work 切换到 s_idle 时使能一个周期
 
+  outvalid := false.B
+  io.outvalid := outvalid
   H0.io.ld := h0ld
   step.io.Kt <> Kt.io.K
   Kt.io.A <> count
@@ -395,11 +400,12 @@ class Sha256Calc extends Module {
       when(io.init) {
         state := s_idle
       }
-      when(count === 63.U) {
+      when(count === 63.U) { // 64轮计算结束
         state := s_idle
         count := 0.U
         inc := false.B
         h0ld:=true.B
+        outvalid := true.B
       }
     }
   }

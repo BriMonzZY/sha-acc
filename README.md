@@ -4,7 +4,19 @@
 
 
 
-安装 [chipyard](https://github.com/ucb-bar/chipyard) 环境用于编译、运行、仿真本项目
+
+
+本项目相关的仓库：
+
+[本仓库](https://github.com/BriMonzZY/sha-acc)
+
+[运行本项目的chipyard环境](https://github.com/BriMonzZY/chipyard-shaacc) ( fork自chipyard v1.11.0 )
+
+[支持本项目sha扩展的spike](https://github.com/BriMonzZY/riscv-isa-sim-sha-extension) ( fork自riscv-isa-sim )
+
+[支持VCU108的fpga-shell](https://github.com/BriMonzZY/rocket-chip-fpga-shells) ( fork自rocket-chip-fpga-shells )
+
+
 
 
 
@@ -29,39 +41,39 @@
 
 
 
+使用方式：
 
-
-
-
-
-
-通过将加速器代码复制到 chipyard 环境下进行编译和仿真
-
-
-
-
+本项目需要在配套的 [chipyard-shaacc](https://github.com/BriMonzZY/chipyard-shaacc) 环境中运行：
 
 ```shell
-./build.sh -h
+git clone https://github.com/BriMonzZY/chipyard-shaacc.git
 
-./build.sh sha3acc # 将sha3复制到chipyard编译,并编译bare测试
+cd chipyard-shaacc
+
+# 这一步可能需要较长的时间，需要占用>3GB的存储空间，建议科学上网
+./init_env.sh # 初始化chipyard环境
+```
+
+
+
+项目代码在 `chipyard-shaacc/generators/sha-acc` 目录中
+
+```shell
+cd chipyard-shaacc/generators/sha-acc
+
+./build.sh -h # help
+
+./build.sh sha3acc
 ./build.sh sha3accprint
-./build.sh sha3test # 在spike运行软件测试
 
 ./build.sh sha2acc
 ./build.sh sha2accprint
-./build.sh sha2test
+
+./build.sh test # 编译测试程序
+
+./run.sh
+
 ```
 
 
-
-编译测试程序：
-
-直接运行 sha2(3)acc/softwave 中的 build.sh 即可编译测试文件（注意需要在 chipyard 环境中编译）
-
-也可以在 chipyard 环境中用 marshal 命令编译以及用 spike 运行测试文件
-
-```shell
-./buildtest.sh # 会把 sha2acc 和 sha3acc 复制到 chipyard 并切换到chipyard环境编译其中的软件测试
-```
 
