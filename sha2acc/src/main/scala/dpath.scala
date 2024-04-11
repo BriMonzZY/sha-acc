@@ -5,13 +5,15 @@ import chisel3.util._
 import org.chipsalliance.cde.config.Parameters
 
 class Sha2DpathModule(val w: Int)(implicit p: Parameters) extends Module {
+  val hash_size_words = 256/w
+  val bytes_per_word = w/8
 
   val io = IO(new Bundle {
     val init = Input(Bool())
     val start = Input(Bool())
     val outvalid = Output(Bool())
     val message_in = new MesIO
-    val hash_out = Flipped(new Hio)
+    val hash_out = Output(Vec(hash_size_words, UInt(w.W)))
   })
 
   val calc = Module(new Sha256Calc)
@@ -20,6 +22,12 @@ class Sha2DpathModule(val w: Int)(implicit p: Parameters) extends Module {
   io.outvalid := calc.io.outvalid
   calc.io.start := io.start
   calc.io.M <> io.message_in
-  io.hash_out <> calc.io.hout
-  dontTouch(io.hash_out)
+
+  // for(i <- 0 until hash_size_words)  {
+  //   io.hash_out(i) := Cat(calc.io.hout(2*i), calc.io.hout(2*i+1))
+  // }
+  val calcout = calc.io.hout
+  for(i <- 0 until hash_size_words) {
+    io.hash_out(i) := Cat(calcout(2*i+1)(7, 0), calcout(2*i+1)(15, 8), calcout(2*i+1)(23, 16), calcout(2*i+1)(31, 24), calcout(2*i)(7, 0), calcout(2*i)(15, 8), calcout(2*i)(23, 16), calcout(2*i)(31, 24))
+  }
 }

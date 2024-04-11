@@ -67,7 +67,7 @@ class Sha2AccelModuleImp(outer: Sha2Accel)(implicit p: Parameters) extends LazyR
   }
   sha2_dmem_ctrl(io.mem.req)
 
-  dmem_data := 0.U
+  dmem_data := dpath.io.hash_out(ctrl.io.windex) // 写入MEM的hash输出
 
   // memory response
   ctrl.io.dmem_resp_val <> io.mem.resp.valid

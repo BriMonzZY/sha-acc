@@ -11,7 +11,8 @@ import freechips.rocketchip.rocket.constants.MemoryOpConstants
 class Sha2CtrlModule(val w: Int)(implicit val p: Parameters) extends Module with HasCoreParameters with MemoryOpConstants {
   // val round_size_words = 512/w // data size of each round (words)
   val round_size_words = 8 // 512bit计算一次
-  // val rounds = 24
+  val hash_size_words = 256/w
+  val bytes_per_word = w/8
 
   val io = IO(new Bundle {
     val rocc_req_val      = Input(Bool())
@@ -42,6 +43,7 @@ class Sha2CtrlModule(val w: Int)(implicit val p: Parameters) extends Module with
     val dpathMessageIn    = Flipped(new MesIO)
     val hash_finish       = Input(Bool())
     val dpath_init        = Output(Bool())
+    val windex            = Output(UInt(log2Up(hash_size_words+1).W))
   })
 
   // rocc state
@@ -49,7 +51,7 @@ class Sha2CtrlModule(val w: Int)(implicit val p: Parameters) extends Module with
   val rocc_s = RegInit(r_idle)
 
   // haser state
-  val s_idle :: s_absorb :: s_hash :: s_wait :: s_write :: Nil = Enum(5)
+  val s_idle :: s_hash :: s_wait :: s_write :: Nil = Enum(4)
   val state = RegInit(s_idle)
 
   val msg_addr = RegInit(0.U(64.W)) // SHA2输入消息地址
@@ -73,8 +75,11 @@ class Sha2CtrlModule(val w: Int)(implicit val p: Parameters) extends Module with
   val mindex  = RegInit(0.U(5.W)) // buffer的索引，以一次读取为单位
   val pindex  = RegInit(0.U(32.W)) // 填充用的数据buffer索引
   val aindex  = RegInit(0.U(log2Up(round_size_words).W))  // absorb counter
+  val windex  = RegInit(0.U(log2Up(hash_size_words+1).W))
+  val writes_done = RegInit(VecInit(Seq.fill(hash_size_words){false.B})) // 用于判断是否写入完毕
   val remain_byte = RegInit(0.U(32.W)) // 剩余的字节数，用于填充
   val last_data = RegInit(0.U(32.W)) // 用于填充
+  val last_round = RegInit(false.B)
   // val next_buff_val = RegInit(false.B)
   // next_buff_val := ((mindex >= (round_size_words).U) || (read >= msg_len)) && (pindex >= (round_size_words - 1).U)
 
@@ -123,6 +128,7 @@ class Sha2CtrlModule(val w: Int)(implicit val p: Parameters) extends Module with
   calc_valid := false.B
   io.dpath_init := dpath_init
   dpath_init := false.B
+  io.windex := windex
 
 
   // start memory handler
@@ -215,22 +221,6 @@ class Sha2CtrlModule(val w: Int)(implicit val p: Parameters) extends Module with
             Mreg(i*2) := Cat(buffer(i)(7, 0), buffer(i)(15, 8), buffer(i)(23, 16), buffer(i)(31, 24))
             Mreg(i*2+1) := Cat(buffer(i)(39, 32), buffer(i)(47, 40), buffer(i)(55, 48), buffer(i)(63, 56))
           }
-
-          // // we have reached the end of this chunk
-          // // mindex := mindex + UInt(1)
-          // // read := read + UInt(8)//read 8 bytes
-          // // 已经发送了所有的请求 we sent all the requests
-          // msg_addr := msg_addr + (round_size_words << 3).U
-          // when(((read + 8.U) > msg_len)) {
-          //   printf("[sha2acc] m_wait to m_absorb state\n")
-          //   buffer_valid := false.B
-          //   mem_s := m_absorb
-          // }.otherwise {
-          //   printf("[sha2acc] m_wait to m_idle state\n")
-          //   // we have more to read eventually
-          //   buffer_valid := true.B
-          //   mem_s := m_idle
-          // }
         }
       }
     } // end of m_wait
@@ -256,6 +246,7 @@ class Sha2CtrlModule(val w: Int)(implicit val p: Parameters) extends Module with
 
         printf("[sha2acc] finish padding message\n")
         mem_s := m_absorb
+        last_round := true.B
       }
     }
     is(m_absorb) { // 4
@@ -285,18 +276,47 @@ class Sha2CtrlModule(val w: Int)(implicit val p: Parameters) extends Module with
     }
     is(s_wait) {
       when(io.hash_finish) { // 当dpath计算完毕，则进入s_write状态
-        state := s_write
+        windex := 0.U
+        when(last_round) {
+          state := s_write
+          last_round := false.B
+        }.otherwise {
+          buffer_valid := false.B
+          buffer_cnt := 0.U
+          state := s_idle
+        }
       }
     }
+    // 最后一轮计算出hash值后写入内存
     is(s_write) {
-      
-      buffer_cnt := 0.U
-      buffer_valid := false.B
-      
-      // TODO: a lot of things to do here
+      // request
+      io.dmem_req_val := windex < hash_size_words.U
+      io.dmem_req_addr := hash_addr
+      io.dmem_req_tag := round_size_words.U + windex
+      io.dmem_req_cmd := M_XWR
 
-      state := s_idle
+      when(io.dmem_req_rdy) {
+        windex := windex + 1.U
+        hash_addr := hash_addr + 8.U
+      }
 
+      // response
+      when(dmem_resp_val_reg) {
+        when(dmem_resp_tag_reg(4, 0) >= round_size_words.U) {
+          writes_done(dmem_resp_tag_reg(4, 0) - round_size_words.U) := true.B
+        }
+      }
+      when(writes_done.reduce(_&&_)) {
+        // 所有写入均完成
+        writes_done := VecInit(Seq.fill(hash_size_words){false.B})
+        buffer_valid := false.B
+        buffer_cnt := 0.U
+        busy := false.B
+        windex := hash_size_words.U
+        state := s_idle
+      }.otherwise {
+        state := s_write
+      }
     }
   }
 

@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
   // static unsigned char input[11] = { 'b', 'a', '9', '8', '7', '6', '5', '4', '3', '2', '1' };
 
   sha256(input, sizeof(input), hash);
-
+ 
   for(i = 0; i < SHA256_SIZE_BYTES; i++) {
     printf("%x,", hash[i]);
   }

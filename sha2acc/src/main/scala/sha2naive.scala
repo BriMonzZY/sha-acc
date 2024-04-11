@@ -86,6 +86,20 @@ class Hio extends Bundle {
   val f = Input(UInt(32.W))
   val g = Input(UInt(32.W))
   val h = Input(UInt(32.W))
+
+  def apply(idx: Int): UInt = {
+    idx match {
+      case 0 => a
+      case 1 => b
+      case 2 => c
+      case 3 => d
+      case 4 => e
+      case 5 => f
+      case 6 => g
+      case 7 => h
+      case _ => 0.U
+    }
+  }
 }
 
 // 将消息分成了16个32位的字，每个字作为一个输入端口
