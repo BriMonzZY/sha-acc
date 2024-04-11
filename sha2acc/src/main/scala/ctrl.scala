@@ -71,10 +71,10 @@ class Sha2CtrlModule(val w: Int)(implicit val p: Parameters) extends Module with
   val read    = RegInit(0.U(32.W)) // 计算从cache读取了多少字的数据，和msg_len比较，来判断是否读取完毕
   val hashed = RegInit(0.U(32.W)) // count how many words in total have been hashed
   val mindex  = RegInit(0.U(5.W)) // buffer的索引，以一次读取为单位
-  val pindex  = RegInit(0.U(log2Up(round_size_words).W)) // 填充用的数据buffer索引
+  val pindex  = RegInit(0.U(32.W)) // 填充用的数据buffer索引
   val aindex  = RegInit(0.U(log2Up(round_size_words).W))  // absorb counter
   val remain_byte = RegInit(0.U(32.W)) // 剩余的字节数，用于填充
-  val last_data = RegInit(0.U(w.W)) // 最后一次读取的数据，用于填充
+  val last_data = RegInit(0.U(32.W)) // 用于填充
   // val next_buff_val = RegInit(false.B)
   // next_buff_val := ((mindex >= (round_size_words).U) || (read >= msg_len)) && (pindex >= (round_size_words - 1).U)
 
@@ -92,25 +92,25 @@ class Sha2CtrlModule(val w: Int)(implicit val p: Parameters) extends Module with
   // Flip-Flop buffer
   val initValues = Seq.fill(round_size_words) { 0.U(w.W) }
   val buffer = RegInit(VecInit(initValues)) // to hold the data of each round
+  val Mreg = RegInit(VecInit(Seq.fill(16)(0.U(32.W))))
   dontTouch(buffer)
-  io.dpathMessageIn(0) := buffer(0)(31, 0)
-  io.dpathMessageIn(1) := buffer(0)(62, 32)
-  io.dpathMessageIn(2) := buffer(1)(31, 0)
-  io.dpathMessageIn(3) := buffer(1)(63, 32)
-  io.dpathMessageIn(4) := buffer(2)(31, 0)
-  io.dpathMessageIn(5) := buffer(2)(63, 32)
-  io.dpathMessageIn(6) := buffer(3)(31, 0)
-  io.dpathMessageIn(7) := buffer(3)(63, 32)
-  io.dpathMessageIn(8) := buffer(4)(31, 0)
-  io.dpathMessageIn(9) := buffer(4)(63, 32)
-  io.dpathMessageIn(10) := buffer(5)(31, 0)
-  io.dpathMessageIn(11) := buffer(5)(63, 32)
-  io.dpathMessageIn(12) := buffer(6)(31, 0)
-  io.dpathMessageIn(13) := buffer(6)(63, 32)
-  io.dpathMessageIn(14) := buffer(7)(31, 0)
-  io.dpathMessageIn(15) := buffer(7)(63, 32)
 
-
+  io.dpathMessageIn(0) := Mreg(0)
+  io.dpathMessageIn(1) := Mreg(1)
+  io.dpathMessageIn(2) := Mreg(2)
+  io.dpathMessageIn(3) := Mreg(3)
+  io.dpathMessageIn(4) := Mreg(4)
+  io.dpathMessageIn(5) := Mreg(5)
+  io.dpathMessageIn(6) := Mreg(6)
+  io.dpathMessageIn(7) := Mreg(7)
+  io.dpathMessageIn(8) := Mreg(8)
+  io.dpathMessageIn(9) := Mreg(9)
+  io.dpathMessageIn(10) := Mreg(10)
+  io.dpathMessageIn(11) := Mreg(11)
+  io.dpathMessageIn(12) := Mreg(12)
+  io.dpathMessageIn(13) := Mreg(13)
+  io.dpathMessageIn(14) := Mreg(14)
+  io.dpathMessageIn(15) := Mreg(15)
 
   // signal defalut
   io.busy := busy
@@ -210,6 +210,12 @@ class Sha2CtrlModule(val w: Int)(implicit val p: Parameters) extends Module with
           buffer_valid := false.B
           mem_s := m_absorb
 
+          // 计算这一轮前将buffer的数据copy到Mreg
+          for(i <- 0 until 8) {
+            Mreg(i*2) := Cat(buffer(i)(7, 0), buffer(i)(15, 8), buffer(i)(23, 16), buffer(i)(31, 24))
+            Mreg(i*2+1) := Cat(buffer(i)(39, 32), buffer(i)(47, 40), buffer(i)(55, 48), buffer(i)(63, 56))
+          }
+
           // // we have reached the end of this chunk
           // // mindex := mindex + UInt(1)
           // // read := read + UInt(8)//read 8 bytes
@@ -230,28 +236,29 @@ class Sha2CtrlModule(val w: Int)(implicit val p: Parameters) extends Module with
     } // end of m_wait
     // 如果读不到一整个数据块，则做数据填充
     is(m_pad) { // 3
-      when(pindex < (round_size_words - 1).U) {
-        when(pindex === mindex) { // 填充不完整的64bit消息
-          // last_data(remain_byte*8) := 1.U(1.W)
-          // buffer(pindex - 1.U) := buffer(pindex - 1.U) << 1
-          buffer(pindex - 1.U) := buffer(pindex - 1.U) | (1.U << 15.U) // FIXME
-          buffer(pindex) := 0.U
+      when(pindex < ( mindex + 1.U)) { // (16.U-(msg_len%64.U)/4.U
+        when(pindex === mindex) { // 给Mreg赋初值
+          for(i <- 0 until 8) {
+            Mreg(i*2) := Cat(buffer(i)(7, 0), buffer(i)(15, 8), buffer(i)(23, 16), buffer(i)(31, 24))
+            Mreg(i*2+1) := Cat(buffer(i)(39, 32), buffer(i)(47, 40), buffer(i)(55, 48), buffer(i)(63, 56))
+          }
+          last_data := Mreg(((msg_len%64.U)/4.U - 1.U))
         }.otherwise {
-          buffer(pindex) := 0.U
-        }
-        pindex := pindex + 1.U
-        mem_s := m_pad
-      }.otherwise { // 最后的64bit填充消息长度
-        printf("[sha2acc] finish padding message\n")
-        buffer(pindex) := msg_len
 
+        }
+        mem_s := m_pad
+        pindex := pindex + 1.U
+      }.otherwise {
+        // 填充长度数据
+        val pad_num = (msg_len % 64.U)/4.U
+        Mreg(15) := msg_len * 8.U
+        Mreg(pad_num) := Mreg(pad_num) & ("xffffffff".U << (4.U-msg_len%4.U))*8.U | ("x80".U << (4.U-msg_len%4.U-1.U)*8.U)
+
+        printf("[sha2acc] finish padding message\n")
         mem_s := m_absorb
       }
-      
     }
     is(m_absorb) { // 4
-      // printf("[sha2acc] in m_absorb state, aindex: %d\n", aindex)
-
       buffer_valid := true.B
 
       when(io.hash_finish) {
@@ -309,7 +316,7 @@ class Sha2CtrlModule(val w: Int)(implicit val p: Parameters) extends Module with
           io.busy := true.B
           io.rocc_req_rdy := true.B
           msg_len := io.rocc_rs1
-          remain_byte := msg_len % (w/8).U
+          remain_byte := msg_len % (512/8).U
           printf("[sha2acc] msg addr: %x, hash addr: %x\n", msg_addr, hash_addr)
           println("[sha2acc] msg len: %x", msg_len)
         }

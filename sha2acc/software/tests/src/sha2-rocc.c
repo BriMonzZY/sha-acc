@@ -18,6 +18,9 @@ int main() {
     // Setup some test data
     static unsigned char input[150] __aligned(8) = { '\0' };
     // static unsigned char input[150] __aligned(8) = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '\0'};
+    // static unsigned char input[13] __aligned(8)= { '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a' , 'b' , 'c', 'd' };
+    // static unsigned char input[1] __abligned(8)= { '1' };
+    
     unsigned char output[SHA256_DIGEST_SIZE] __aligned(8);
 
     start = rdcycle();
