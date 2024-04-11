@@ -24,7 +24,7 @@ do
   case $1 in
     -h | --help)
       usage 3 ;;
-    sha3acc | sha3accprint | sha2acc | sha2accprint | test | clean)
+    sha3acc | sha3accprint | sha2acc | sha2accprint | test | clean | spike-sha)
       BUILD_TYPE=$1 ;;
 
     * )
@@ -70,6 +70,7 @@ if [ $BUILD_TYPE == "test" ]; then
   ./build.sh
   cd ../../sha2acc/software
   ./build.sh
+  exit_build
 fi
 
 if [ $BUILD_TYPE == "sha2acc" ]; then
@@ -81,7 +82,25 @@ if [ $BUILD_TYPE == "sha2acc" ]; then
 fi
 
 if [ $BUILD_TYPE == "clean" ]; then
-echo " ========== CLEAN VERILATOR BUILD FILES =========="
+  echo " ========== CLEAN VERILATOR BUILD FILES =========="
   cd $chipyard/sims/verilator
   make clean
+  cd $chipyard/sims/vcs
+  make clean
+  cd $chipyard/sims/xcelium
+  make clean
+fi
+
+
+
+
+if [ $BUILD_TYPE == "spike-sha" ]; then
+  echo " ========== BUILD spike-sha =========="
+  cd $chipyard/toolchains/riscv-tools/riscv-isa-sim-sha-extension
+  mkdir build
+  cd build
+  ../configure --prefix=$pwd/../../toolchains/riscv-tools/riscv-isa-sim-sha-extension/install
+  make -j$(nproc)
+  make install
+  exit_build
 fi

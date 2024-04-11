@@ -17,7 +17,7 @@ int main() {
   unsigned long inst_start, inst_end;
 
   do {
-    printf("Start basic test 1.\n");
+    printf("Start SHA3-256 basic test 1.\n");
     // BASIC TEST 1 - 150 zero bytes
 
     // Setup some test data

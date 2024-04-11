@@ -22,7 +22,7 @@
 
 #include "sha3.h"
 
-// #define TEST
+#define TEST
 
 static void help(const char *argv0)
 {
@@ -153,6 +153,7 @@ int main(int argc, char *argv[])
     // printf("%s", s);
     printf("%d,", hash[i]);
   }
+  printf("\n");
 
   return 0;
 #endif
