@@ -8,5 +8,6 @@
 !/sha2sim/*
 !Makefile
 !README.md
+!readme_zh-cn.md
 !.gitignore
 !*.sh
