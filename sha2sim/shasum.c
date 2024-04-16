@@ -88,10 +88,11 @@ int main(int argc, char *argv[])
   unsigned i;
   uint8_t hash[SHA256_SIZE_BYTES];
 
-  static unsigned char input[150] = { '\0' };
+  // static unsigned char input[150] = { '\0' };
   // static unsigned char input[150] = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '\0'};
   // static unsigned char input[13] = { '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a' , 'b', 'c', 'd' };
   // static unsigned char input[11] = { 'b', 'a', '9', '8', '7', '6', '5', '4', '3', '2', '1' };
+  static unsigned char input[10] = { '1', '2', '3', '4', '5', '6', '7', '8', '9', '0' };
 
   sha256(input, sizeof(input), hash);
  

@@ -138,7 +138,9 @@ int main(int argc, char *argv[])
   sha3_context c;
   const uint8_t *hash;
 
-  static unsigned char input[150] = { '\0' };
+  // static unsigned char input[150] = { '\0' };
+  static unsigned char input[10] = { '1', '2', '3', '4', '5', '6', '7', '8', '9', '0' };
+
   p = (void *)input;
 
   sha3Init256(&c);
