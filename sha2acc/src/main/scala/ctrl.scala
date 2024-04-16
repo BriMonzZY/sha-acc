@@ -336,6 +336,12 @@ class Sha2CtrlModule(val w: Int)(implicit val p: Parameters) extends Module with
           io.busy := true.B
           io.rocc_req_rdy := true.B
           msg_len := io.rocc_rs1
+
+          windex := 0.U
+          read := 0.U
+          pindex := 0.U
+          mindex := 0.U
+
           remain_byte := msg_len % (512/8).U
           printf("[sha2acc] msg addr: %x, hash addr: %x\n", msg_addr, hash_addr)
           println("[sha2acc] msg len: %x", msg_len)
