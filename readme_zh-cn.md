@@ -2,9 +2,9 @@
 
 关键词：SHA、Rocket Chip、Chipyard、RoCC
 
+<br/>
 
-
-
+<br/>
 
 本项目相关的仓库：
 
@@ -16,11 +16,9 @@
 
 [支持VCU108的fpga-shell](https://github.com/BriMonzZY/rocket-chip-fpga-shells) ( fork自rocket-chip-fpga-shells )
 
+<br/>
 
-
-
-
-
+<br/>
 
 文件结构：
 
@@ -37,9 +35,9 @@
 └── doc // 文档
 ```
 
+<br/>
 
-
-
+<br/>
 
 使用方式：
 
@@ -54,16 +52,22 @@ cd chipyard-shaacc
 ./init_env.sh # 初始化chipyard环境
 ```
 
-
+<br/>
 
 项目代码在 `chipyard-shaacc/generators/sha-acc` 目录中。
 
 可以执行 `build.sh` 、`chiseltest.sh` 或者 `run.sh` 脚本来编译或者运行本项目：
 
 ```shell
+## 进入目录
 cd chipyard-shaacc/generators/sha-acc
 
-./build.sh -h # help
+## help
+./build.sh -h 
+./run.sh -h
+./fpgabuild.sh -h
+./chiseltest.sh -h
+
 
 ./build.sh sha3acc
 ./build.sh sha3accprint
@@ -75,11 +79,27 @@ cd chipyard-shaacc/generators/sha-acc
 
 ./build.sh clean # 在sims/verilator和sims/vcs和sims/xcelium中执行 make clean 清除编译产生的文件
 
-./run.sh # 运行编译的文件或者编译并运行
 
-./chiseltest.sh # 运行单元测试
 
+./run.sh # 运行编译的文件或者编译并运行(TODO还没有完善)
+
+
+
+## 运行单元测试
+./chiseltest.sh
+./chiseltest.sh sha3
+./chiseltest.sh sha2
 ```
 
+<br/>
 
+<br/>
+
+生成FPGA比特流文件
+
+默认生成VCU108板卡的比特流文件
+
+```shell
+./fpgabuild.sh
+```
 

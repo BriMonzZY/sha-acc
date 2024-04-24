@@ -23,10 +23,9 @@ class Sha2DpathModule(val w: Int)(implicit p: Parameters) extends Module {
   calc.io.start := io.start
   calc.io.M <> io.message_in
 
-  // for(i <- 0 until hash_size_words)  {
-  //   io.hash_out(i) := Cat(calc.io.hout(2*i), calc.io.hout(2*i+1))
-  // }
   val calcout = calc.io.hout
+  // 将calc的输出合并为64位的输出
+  // 并将最低位的字节移到最高位
   for(i <- 0 until hash_size_words) {
     io.hash_out(i) := Cat(calcout(2*i+1)(7, 0), calcout(2*i+1)(15, 8), calcout(2*i+1)(23, 16), calcout(2*i+1)(31, 24), calcout(2*i)(7, 0), calcout(2*i)(15, 8), calcout(2*i)(23, 16), calcout(2*i)(31, 24))
   }

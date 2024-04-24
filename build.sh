@@ -14,6 +14,12 @@ usage() {
   echo ""
   echo "Options"
   echo "  --help -h : Display this message"
+  echo "  sha3acc : Build sha3acc"
+  echo "  sha3accprint : Build sha3acc with printf"
+  echo "  sha2acc : Build sha2acc"
+  echo "  test : Build sha3acc and sha2acc software tests"
+  echo "  spike-sha : Build spike-sha"
+  echo "  clean : Clean verilator build files"
   exit "$1"
 }
 

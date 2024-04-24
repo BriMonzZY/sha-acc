@@ -54,6 +54,11 @@ class Sha2CtrlModule(val w: Int)(implicit val p: Parameters) extends Module with
   val s_idle :: s_hash :: s_wait :: s_write :: Nil = Enum(4)
   val state = RegInit(s_idle)
 
+  // memory state
+  val m_idle :: m_read :: m_wait :: m_pad :: m_absorb :: Nil = Enum(5)
+  val mem_s = RegInit(m_idle)
+
+
   val msg_addr = RegInit(0.U(64.W)) // SHA2输入消息地址
   val hash_addr= RegInit(0.U(64.W)) // SHA2输出hash地址
   val msg_len  = RegInit(0.U(64.W)) // SHA2输入消息长度
@@ -86,19 +91,27 @@ class Sha2CtrlModule(val w: Int)(implicit val p: Parameters) extends Module with
   // 已经接收了多少数据（mindex）用于赋值pindex
   val words_filled = mindex
 
-  // memory state
-  val m_idle :: m_read :: m_wait :: m_pad :: m_absorb :: Nil = Enum(5)
-  val mem_s = RegInit(m_idle)
-
-
-  io.aindex := RegNext(aindex)
-
   
   // Flip-Flop buffer
   val initValues = Seq.fill(round_size_words) { 0.U(w.W) }
   val buffer = RegInit(VecInit(initValues)) // to hold the data of each round
   val Mreg = RegInit(VecInit(Seq.fill(16)(0.U(32.W))))
   dontTouch(buffer)
+
+
+  // signal defalut
+  io.busy := busy
+  io.dmem_req_val := false.B
+  io.dmem_req_tag := 0.U
+  io.dmem_req_addr := 0.U(32.W)
+  io.dmem_req_cmd:= M_XRD
+  io.dmem_req_size:= log2Ceil(8).U
+  io.calc_valid := calc_valid
+  calc_valid := false.B
+  io.dpath_init := dpath_init
+  dpath_init := false.B
+  io.windex := windex
+  io.aindex := RegNext(aindex)
 
   io.dpathMessageIn(0) := Mreg(0)
   io.dpathMessageIn(1) := Mreg(1)
@@ -116,19 +129,6 @@ class Sha2CtrlModule(val w: Int)(implicit val p: Parameters) extends Module with
   io.dpathMessageIn(13) := Mreg(13)
   io.dpathMessageIn(14) := Mreg(14)
   io.dpathMessageIn(15) := Mreg(15)
-
-  // signal defalut
-  io.busy := busy
-  io.dmem_req_val := false.B
-  io.dmem_req_tag := 0.U
-  io.dmem_req_addr := 0.U(32.W)
-  io.dmem_req_cmd:= M_XRD
-  io.dmem_req_size:= log2Ceil(8).U
-  io.calc_valid := calc_valid
-  calc_valid := false.B
-  io.dpath_init := dpath_init
-  dpath_init := false.B
-  io.windex := windex
 
 
   // start memory handler
@@ -217,6 +217,7 @@ class Sha2CtrlModule(val w: Int)(implicit val p: Parameters) extends Module with
           mem_s := m_absorb
 
           // 计算这一轮前将buffer的数据copy到Mreg
+          // 将64位的buffer拆分成32位的Mreg，并且将buffer的低位数据填充到Mreg的最高位
           for(i <- 0 until 8) {
             Mreg(i*2) := Cat(buffer(i)(7, 0), buffer(i)(15, 8), buffer(i)(23, 16), buffer(i)(31, 24))
             Mreg(i*2+1) := Cat(buffer(i)(39, 32), buffer(i)(47, 40), buffer(i)(55, 48), buffer(i)(63, 56))
@@ -228,6 +229,8 @@ class Sha2CtrlModule(val w: Int)(implicit val p: Parameters) extends Module with
     is(m_pad) { // 3
       when(pindex < ( mindex + 1.U)) { // (16.U-(msg_len%64.U)/4.U
         when(pindex === mindex) { // 给Mreg赋初值
+          // 对不满的Mreg进行填充
+          // 将低位数据填充到Mreg的最高位
           for(i <- 0 until 8) {
             Mreg(i*2) := Cat(buffer(i)(7, 0), buffer(i)(15, 8), buffer(i)(23, 16), buffer(i)(31, 24))
             Mreg(i*2+1) := Cat(buffer(i)(39, 32), buffer(i)(47, 40), buffer(i)(55, 48), buffer(i)(63, 56))
@@ -249,6 +252,7 @@ class Sha2CtrlModule(val w: Int)(implicit val p: Parameters) extends Module with
         last_round := true.B
       }
     }
+    // 开始计算hash
     is(m_absorb) { // 4
       buffer_valid := true.B
 
@@ -337,6 +341,7 @@ class Sha2CtrlModule(val w: Int)(implicit val p: Parameters) extends Module with
           io.rocc_req_rdy := true.B
           msg_len := io.rocc_rs1
 
+          // 初始化参数
           windex := 0.U
           read := 0.U
           pindex := 0.U
