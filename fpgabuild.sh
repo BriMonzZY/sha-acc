@@ -16,7 +16,7 @@ if [ -n "$vivadooutput" ]; then
   echo "Vivado tools is installed"
   echo $vivadooutput
 else
-  echo "Vivado tools no found, please install vivado or check environment variable"
+  echo "Vivado tools no found, please install vivado or check environment variables of vivado"
   exit 1
 fi
 
@@ -28,6 +28,7 @@ usage() {
   echo "  --help -h : Display this message"
   echo "  sha3acc : Build SHA3 Accelerator bitstream (VCU108)"
   echo "  sha2acc : Build SHA2 Accelerator bitstream (VCU108)"
+  echo "  rocket  : Build Rocket Chip bitstream(VCU108)"
   echo "  clean   : Clean all generated files in fpga directory"
   exit "$1"
 }
@@ -64,6 +65,7 @@ if [ $BUILD_TYPE == "sha3acc" ]; then
   cd $chipyard
   source ./env.sh
   cd fpga
+  make SUB_PROJECT=vcu108 CONFIG=Sha3RocketVCU108Config bitstream -j$(nproc)
   exit_build
 fi
 
@@ -71,6 +73,15 @@ if [ $BUILD_TYPE == "sha2acc" ]; then
   cd $chipyard
   source ./env.sh
   cd fpga
+  make SUB_PROJECT=vcu108 CONFIG=Sha2RocketVCU108Config bitstream -j$(nproc)
+  exit_build
+fi
+
+if [ $BUILD_TYPE == "rocket" ]; then
+  cd $chipyard
+  source ./env.sh
+  cd fpga
+  make SUB_PROJECT=vcu108 CONFIG=RocketVCU108Config bitstream -j$(nproc)
   exit_build
 fi
 
