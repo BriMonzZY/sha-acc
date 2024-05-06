@@ -6,6 +6,7 @@
 # !/sha2acc/*
 !/sha3sim/*
 !/sha2sim/*
+!/images/*
 !Makefile
 !README.md
 !readme_en.md
