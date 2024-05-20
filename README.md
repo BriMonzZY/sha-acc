@@ -115,7 +115,7 @@ bitstream 生成成功后可以在 `fpga/generated-src/<long-name>/obj` 中找�
 
 在VCU108板卡**XCVU095-2FFVA2104E**下进行综合：
 
- ![image-20240520165200412](/home/brimon/chipyard-shaacc/generators/sha-acc/images/image-20240520165200412.png)
+ ![image-20240520165200412](./images/image-20240520165200412.png)
 
 在 4.16ns 的时序约束下，关键路径的建立时间的裕量为 1.075ns
 
@@ -135,7 +135,7 @@ sdboot的代码在`fpga/src/main/resources/vcu118/sdboot`位置
 
 Chipyard生成的SoC的地址映射关系：
 
- <img src="/home/brimon/Downloads/0552D847EDFF0AB8339A5E9D2AC2260B.png" style="zoom: 67%;" />
+ <img src="./images/0552D847EDFF0AB8339A5E9D2AC2260B.png" style="zoom:67%;" />
 
 <br/>
 
