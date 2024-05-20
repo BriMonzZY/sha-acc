@@ -84,9 +84,7 @@ cd chipyard-shaacc/generators/sha-acc
 ./build.sh clean # 在sims/verilator和sims/vcs和sims/xcelium中执行 make clean 清除编译产生的文件
 
 
-
 ./run.sh # 运行编译的文件或者编译并运行(TODO还没有完善)
-
 
 
 ## 运行单元测试
@@ -111,7 +109,15 @@ cd chipyard-shaacc/generators/sha-acc
 ./fpgabuild.sh -h # 获取帮助
 ```
 
-bitstream 生成成功后可以在 `fpga/generated-src/<long-name>/obj` 中找到比特流文件以及vivado的检查点文件
+bitstream 生成成功后可以在 `fpga/generated-src/<long-name>/obj` 中找到比特流文件以及 vivado 的检查点文件，可以查看资源利用率以及时序报告等信息，或者在 checkpoint 上根据 [UltraFast](https://docs.amd.com/r/zh-CN/ug949-vivado-design-methodology) 流程插入ILA探针进行调试。
+
+<br/>
+
+在VCU108板卡**XCVU095-2FFVA2104E**下进行综合：
+
+ ![image-20240520165200412](/home/brimon/chipyard-shaacc/generators/sha-acc/images/image-20240520165200412.png)
+
+在 4.16ns 的时序约束下，关键路径的建立时间的裕量为 1.075ns
 
 <br/>
 
@@ -127,13 +133,19 @@ sdboot的代码在`fpga/src/main/resources/vcu118/sdboot`位置
 
 <br/>
 
+Chipyard生成的SoC的地址映射关系：
+
+ <img src="/home/brimon/Downloads/0552D847EDFF0AB8339A5E9D2AC2260B.png" style="zoom: 67%;" />
+
+<br/>
+
 #### VCU108的Micro-SD外设
 
 板载的SD卡卡槽是连接在ZYNQ7010上的，只能用于板卡的配置，所以需要外接一个SD卡卡槽用于插入SD卡
 
 我使用了PMOD模块连接在VCU108右侧的PMOD接口上，如下图所示
 
-<img  src="./images/7dbdae681b76ced51a7f6cf18fd91bd3_720.jpg" align='left' style="zoom: 33%;" />
+ <img src="./images/7dbdae681b76ced51a7f6cf18fd91bd3_720.jpg" style="zoom:50%;" />
 
 <br/>
 
@@ -145,7 +157,9 @@ sdboot的代码在`fpga/src/main/resources/vcu118/sdboot`位置
 
 成功加载SD卡将会输出如下的内容:
 
-<img  src="./images/1714532843496-23353bd0-c0be-4729-80d9-52e0424de79d.png" align='left'/>
+ ![](./images/1714532843496-23353bd0-c0be-4729-80d9-52e0424de79d.png)
+
+<br/>
 
 <br/>
 
@@ -162,7 +176,7 @@ sdboot的代码在`fpga/src/main/resources/vcu118/sdboot`位置
 5. **输入w指令保存更改并写入**
 6. （可以不创建第二个分区sda2）
 
-这样我们就创建了一个512MiB的`/dev/sda1`，我们将把bin文件烧录到这个分区
+这样我们就创建了一个512MiB的 `/dev/sda1` ，我们将把bin文件烧录到这个分区
 
 <br/>
 
@@ -173,4 +187,20 @@ sudo dd if=sha3-sw/bin of=/dev/sda1
 ```
 
 等待写入完成后就可以将SD卡插入FPGA板卡了。
+
+<br/>
+
+#### 测试结果
+
+在FPGA上运行SHA3测试：
+
+ ![](./images/image-20240520163540665.png)
+
+<br/>
+
+运行SHA2测试：
+
+ ![](./images/image-20240520163513950.png)
+
+
 
