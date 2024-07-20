@@ -125,7 +125,9 @@ bitstream 生成成功后可以在 `fpga/generated-src/<long-name>/obj` 中找�
 
 ### 运行裸机 ( bare-metal ) 程序
 
-chipyard通过固化在ROM的**sdboot**程序来从SD卡中加载用户程序
+和前面的测试程序不同，运行在FPGA上的程序需要进行一定调整才能正确运行，例如提供对memset、memcopy等内存操作、printf等打印操作的软件支持才能在SoC上运行裸机软件。本文加入了klib模块来提供上面提到了运行时环境。klib提供了kprintf、kputs、kputc、memset、memcopy等常用的功能函数，其中打印功能的函数使用了MMIO的方式来驱动SoC中的串口外设来实现程序运行过程中的消息输出。
+
+chipyard通过固化在ROM的**sdboot**程序来从SD卡中加载用户程序。
 
 例如我生成一个默认配置的Rocket Core的比特流文件,处理器核的pc将从0x10000开始运行（也就是存放sdboot的ROM的位置），sdboot开始通过SPI协议将SD卡对应位置（34）的程序拷贝到0x80000000开始的内存位置上，随后设置寄存器以及运行其他必要操作（设置a0和a1用于启动Linux）然后跳转到0x80000000地址开始执行程序。
 
@@ -145,13 +147,17 @@ Chipyard生成的SoC的地址映射关系：
 
 我使用了PMOD模块连接在VCU108右侧的PMOD接口上，如下图所示
 
+<img src="./images/vcu108.png" style="zoom:50%;" />
+
  <img src="./images/7dbdae681b76ced51a7f6cf18fd91bd3_720.jpg" style="zoom:50%;" />
 
 <br/>
 
 #### 将裸机程序加载进Micro-SD卡
 
-大致流程：将用户程序编译完成后,用objcopy工具生成bin文件，然后用dd指令加载进SD卡
+大致流程：将用户程序编译完成后,用objcopy工具生成bin文件，然后用dd指令加载进SD卡。
+
+用于FPGA原型验证的程序在 fpga_prototype_software 文件夹中，根据文件夹中README的提示进行编译和加载即可。（2024-7-20更新）
 
 <br/>
 
@@ -202,5 +208,8 @@ sudo dd if=sha3-sw/bin of=/dev/sda1
 
  ![](./images/image-20240520163513950.png)
 
+<br/>
 
+<br/>
 
+基于RISC-V的SHA系列哈希算法硬件加速器的实物演示视频：https://pan.baidu.com/s/1lb5idFS651VYNDrE4HT7Zg?pwd=rq52 提取码:rq52
