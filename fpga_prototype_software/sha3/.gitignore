@@ -1,0 +1,16 @@
+*.*
+*
+!*/
+!/src/**
+!/klib/**
+!/bare/**
+!.gitignore
+!*.sh
+!README.md
+!*.mk
+!*.c
+!*.h
+!*.S
+!*.ld
+!Makefile
+*.riscv
